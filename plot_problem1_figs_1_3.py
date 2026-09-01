@@ -348,7 +348,7 @@ def figure_1_parameter_definition() -> None:
     )
 
     # P0 位于圆域内侧；节点按题目编号向外递推，保证多节实体均落在 8.8 m 圆域内。
-    theta_nodes = [THETA_INITIAL - 1.62]
+    theta_nodes = [THETA_INITIAL - 3.20]
     handle_lengths = [2.86, 1.65, 1.65, 1.65, 1.65]
     for handle_length in handle_lengths:
         theta_nodes.append(solve_outer_theta(theta_nodes[-1], handle_length))
@@ -357,6 +357,8 @@ def figure_1_parameter_definition() -> None:
 
     selected_index = 2
     selected_midpoint = None
+    head_midpoint = None
+    body_midpoint = None
     for index, total_length in enumerate(total_lengths):
         p_start, p_end = node_points[index], node_points[index + 1]
         is_head = index == 0
@@ -392,34 +394,10 @@ def figure_1_parameter_definition() -> None:
         )
 
         midpoint = 0.5 * (p_start + p_end)
-        direction = p_end - p_start
-        rotation = np.degrees(np.arctan2(direction[1], direction[0]))
         if is_head:
-            ax_overview.text(
-                midpoint[0],
-                midpoint[1],
-                "龙头 3.41 m",
-                color=DARK_RED,
-                ha="center",
-                va="center",
-                rotation=rotation,
-                rotation_mode="anchor",
-                weight="bold",
-                zorder=8,
-            )
+            head_midpoint = midpoint
         elif index == 1:
-            ax_overview.text(
-                midpoint[0],
-                midpoint[1],
-                "龙身 2.20 m",
-                color=DARK_BLUE,
-                ha="center",
-                va="center",
-                rotation=rotation,
-                rotation_mode="anchor",
-                weight="bold",
-                zorder=8,
-            )
+            body_midpoint = midpoint
         if index == selected_index:
             selected_midpoint = midpoint
             ax_overview.add_patch(
@@ -454,7 +432,7 @@ def figure_1_parameter_definition() -> None:
     ax_overview.text(
         radius_label[0] - 0.25,
         radius_label[1] + 0.20,
-        "$R=8.80\\,\\mathrm{m}$",
+        "$R=8.80\\,\\mathrm{m}=880\\,\\mathrm{cm}$",
         color=DARK_GREEN,
         rotation=np.degrees(radius_angle) - 180,
         rotation_mode="anchor",
@@ -462,12 +440,37 @@ def figure_1_parameter_definition() -> None:
         va="bottom",
         weight="bold",
     )
+    if head_midpoint is not None:
+        ax_overview.annotate(
+            "龙头板凳：$3.41\\,\\mathrm{m}\\times0.30\\,\\mathrm{m}$",
+            xy=head_midpoint,
+            xytext=(2.2, -6.3),
+            arrowprops=dict(arrowstyle="->", color=DARK_RED, lw=1.2),
+            bbox=dict(boxstyle="round,pad=0.25", facecolor=LIGHT_RED, edgecolor="none", alpha=0.55),
+            color=DARK_RED,
+            ha="left",
+            va="center",
+            weight="bold",
+            zorder=10,
+        )
+    if body_midpoint is not None:
+        ax_overview.annotate(
+            "龙身板凳：$2.20\\,\\mathrm{m}\\times0.30\\,\\mathrm{m}$",
+            xy=body_midpoint,
+            xytext=(2.2, -5.0),
+            arrowprops=dict(arrowstyle="->", color=DARK_BLUE, lw=1.2),
+            bbox=dict(boxstyle="round,pad=0.25", facecolor=LIGHT_BLUE, edgecolor="none", alpha=0.55),
+            color=DARK_BLUE,
+            ha="left",
+            va="center",
+            weight="bold",
+            zorder=10,
+        )
     if selected_midpoint is not None:
         ax_overview.annotate(
             "局部放大",
             xy=selected_midpoint,
-            xytext=(0.94, 0.84),
-            textcoords="axes fraction",
+            xytext=(-7.5, -3.8),
             arrowprops=dict(arrowstyle="->", color=DARK_ORANGE, lw=1.25),
             color=DARK_ORANGE,
             ha="right",
@@ -481,7 +484,7 @@ def figure_1_parameter_definition() -> None:
     ax_overview.set_aspect("equal")
     ax_overview.set_xticks([])
     ax_overview.set_yticks([])
-    ax_overview.set_title("(a) $R=8.80$ m 圆域内的板凳实体比例", loc="left", pad=8)
+    ax_overview.set_title("(a) $R=8.80$ m（$880$ cm）圆域内的板凳实体比例", loc="left", pad=8)
     for spine in ax_overview.spines.values():
         spine.set_visible(False)
 
@@ -574,22 +577,21 @@ def figure_1_parameter_definition() -> None:
         weight="bold",
     )
     ax_local.text(
-        0.50,
-        0.12,
-        "$\\boxed{L_i\\neq s_i}$",
-        transform=ax_local.transAxes,
+        0.5 * handle_distance,
+        -0.56,
+        "$L_i\\neq s_i$",
         color=DARK_RED,
         ha="center",
         va="center",
         fontsize=13,
         weight="bold",
+        bbox=dict(boxstyle="round,pad=0.25", facecolor=LIGHT_RED, edgecolor="none", alpha=0.45),
     )
     ax_local.text(
-        0.50,
-        0.03,
+        0.5 * handle_distance,
+        -0.88,
         "龙头：$3.41-2\\times0.275=2.86\\,\\mathrm{m}$\n"
         "龙身：$2.20-2\\times0.275=1.65\\,\\mathrm{m}$",
-        transform=ax_local.transAxes,
         ha="center",
         va="bottom",
         bbox=dict(boxstyle="round,pad=0.35", facecolor=LIGHT_YELLOW, edgecolor="none", alpha=0.88),
@@ -597,7 +599,7 @@ def figure_1_parameter_definition() -> None:
     )
 
     ax_local.set_xlim(-0.48, handle_distance + 0.48)
-    ax_local.set_ylim(-0.66, 0.82)
+    ax_local.set_ylim(-0.98, 0.82)
     ax_local.set_aspect("equal")
     ax_local.set_xticks([])
     ax_local.set_yticks([])
