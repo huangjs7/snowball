@@ -470,7 +470,7 @@ def figure_1_parameter_definition() -> None:
         ax_overview.annotate(
             "局部放大",
             xy=selected_midpoint,
-            xytext=(-7.5, -3.8),
+            xytext=(-5.8, -3.6),
             arrowprops=dict(arrowstyle="->", color=DARK_ORANGE, lw=1.25),
             color=DARK_ORANGE,
             ha="right",
