@@ -1,8 +1,12 @@
-# 问题一论文插图（图 1～3）
+# 问题一论文插图
 
-- `fig1_bench_scale_and_chord_constraint`：真实尺度的板凳实体总览及直线弦长约束局部放大图。
-- `fig2_adjacent_handle_chord_constraint`：相邻把手在阿基米德螺线上的几何约束。
-- `fig3_adjacent_handle_velocity_transfer`：相邻把手速度传递的几何关系。
+每幅图单独存放，目录内包含独立运行入口、PNG、SVG、PDF 和说明文件。
 
-每幅图同时提供 PNG（300 dpi）、SVG 和 PDF。运行工作区根目录下的
-`plot_problem1_figs_1_3.py` 可重新生成全部文件。
+| 图号 | 目录 | 独立入口 |
+|---|---|---|
+| 图 1 | `fig01_bench_scale_chord` | `fig01_bench_scale_chord/plot.py` |
+| 图 2 | `fig02_handle_geometry` | `fig02_handle_geometry/plot.py` |
+| 图 3 | `fig03_velocity_transfer` | `fig03_velocity_transfer/plot.py` |
+
+`common_plotting.py` 保存统一配色、数学参数和公共几何函数，各图的
+`plot.py` 只生成本目录对应的一幅图。
