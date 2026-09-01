@@ -12,7 +12,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Arc, FancyArrowPatch
+from matplotlib.patches import Arc, Circle, FancyArrowPatch, Polygon
 import numpy as np
 
 
@@ -171,7 +171,7 @@ def solve_outer_theta(theta_i: float, chord_length: float) -> float:
     return 0.5 * (lo + hi)
 
 
-def figure_1_parameter_definition() -> None:
+def _figure_1_parameter_definition_legacy() -> None:
     fig, (ax_overview, ax_local) = plt.subplots(
         1, 2, figsize=(12.6, 5.6), gridspec_kw={"width_ratios": [1.12, 0.88]}
     )
@@ -268,6 +268,345 @@ def figure_1_parameter_definition() -> None:
 
     fig.subplots_adjust(left=0.025, right=0.985, top=0.92, bottom=0.04, wspace=0.12)
     save_figure(fig, "fig1_archimedean_spiral_definition")
+
+
+def _bench_corners(p_start: np.ndarray, p_end: np.ndarray, total_length: float) -> np.ndarray:
+    """按真实长、宽生成板凳俯视矩形，孔中心位于短边内侧 0.275 m。"""
+
+    direction = unit(p_end - p_start)
+    normal = np.array([-direction[1], direction[0]])
+    center = 0.5 * (p_start + p_end)
+    half_length = 0.5 * total_length
+    half_width = 0.15
+    return np.array(
+        [
+            center - half_length * direction - half_width * normal,
+            center + half_length * direction - half_width * normal,
+            center + half_length * direction + half_width * normal,
+            center - half_length * direction + half_width * normal,
+        ]
+    )
+
+
+def _to_chord_coordinates(points: np.ndarray, p_start: np.ndarray, p_end: np.ndarray) -> np.ndarray:
+    """将点变换到以直线弦为横轴的局部坐标系。"""
+
+    direction = unit(p_end - p_start)
+    normal = np.array([-direction[1], direction[0]])
+    relative = np.asarray(points) - p_start
+    return np.column_stack([relative @ direction, relative @ normal])
+
+
+def _dimension_arrow(
+    ax: plt.Axes,
+    x_start: float,
+    x_end: float,
+    y: float,
+    label: str,
+    color: str,
+    label_above: bool = True,
+) -> None:
+    ax.add_patch(
+        FancyArrowPatch(
+            (x_start, y),
+            (x_end, y),
+            arrowstyle="<->",
+            mutation_scale=11,
+            color=color,
+            lw=1.35,
+            zorder=8,
+        )
+    )
+    offset = 0.055 if label_above else -0.055
+    ax.text(
+        0.5 * (x_start + x_end),
+        y + offset,
+        label,
+        color=color,
+        ha="center",
+        va="bottom" if label_above else "top",
+        weight="bold",
+    )
+
+
+def figure_1_parameter_definition() -> None:
+    """真实尺度总览与直线弦长约束的局部放大图。"""
+
+    fig, (ax_overview, ax_local) = plt.subplots(
+        1,
+        2,
+        figsize=(13.4, 6.2),
+        gridspec_kw={"width_ratios": [1.08, 0.92]},
+    )
+
+    # ---------- (a) 8.8 m 圆域内按真实比例布置多节板凳 ----------
+    theta_spiral = np.linspace(0.03, THETA_INITIAL, 6500)
+    spiral_x, spiral_y = spiral_xy(theta_spiral)
+    ax_overview.plot(spiral_x, spiral_y, color=LIGHT_CYAN, lw=0.82, alpha=0.48, zorder=1)
+    ax_overview.add_patch(
+        Circle((0, 0), R_INITIAL, fill=False, edgecolor=DARK_BLUE, lw=2.0, zorder=2)
+    )
+
+    # P0 位于圆域内侧；节点按题目编号向外递推，保证多节实体均落在 8.8 m 圆域内。
+    theta_nodes = [THETA_INITIAL - 1.62]
+    handle_lengths = [2.86, 1.65, 1.65, 1.65, 1.65]
+    for handle_length in handle_lengths:
+        theta_nodes.append(solve_outer_theta(theta_nodes[-1], handle_length))
+    node_points = np.array([spiral_xy(value) for value in theta_nodes], dtype=float)
+    total_lengths = [3.41, 2.20, 2.20, 2.20, 2.20]
+
+    selected_index = 2
+    selected_midpoint = None
+    for index, total_length in enumerate(total_lengths):
+        p_start, p_end = node_points[index], node_points[index + 1]
+        is_head = index == 0
+        edge_color = DARK_RED if is_head else DARK_BLUE
+        face_color = LIGHT_RED if is_head else LIGHT_BLUE
+        corners = _bench_corners(p_start, p_end, total_length)
+        ax_overview.add_patch(
+            Polygon(
+                corners,
+                closed=True,
+                facecolor=face_color,
+                edgecolor=edge_color,
+                lw=1.45,
+                alpha=0.82,
+                zorder=5,
+            )
+        )
+        ax_overview.plot(
+            [p_start[0], p_end[0]],
+            [p_start[1], p_end[1]],
+            color=DARK_PURPLE,
+            lw=1.35,
+            zorder=6,
+        )
+        ax_overview.scatter(
+            [p_start[0], p_end[0]],
+            [p_start[1], p_end[1]],
+            s=18,
+            color=DARK_PURPLE,
+            edgecolor="white",
+            lw=0.45,
+            zorder=7,
+        )
+
+        midpoint = 0.5 * (p_start + p_end)
+        direction = p_end - p_start
+        rotation = np.degrees(np.arctan2(direction[1], direction[0]))
+        if is_head:
+            ax_overview.text(
+                midpoint[0],
+                midpoint[1],
+                "龙头 3.41 m",
+                color=DARK_RED,
+                ha="center",
+                va="center",
+                rotation=rotation,
+                rotation_mode="anchor",
+                weight="bold",
+                zorder=8,
+            )
+        elif index == 1:
+            ax_overview.text(
+                midpoint[0],
+                midpoint[1],
+                "龙身 2.20 m",
+                color=DARK_BLUE,
+                ha="center",
+                va="center",
+                rotation=rotation,
+                rotation_mode="anchor",
+                weight="bold",
+                zorder=8,
+            )
+        if index == selected_index:
+            selected_midpoint = midpoint
+            ax_overview.add_patch(
+                Circle(
+                    tuple(midpoint),
+                    1.35,
+                    fill=False,
+                    edgecolor=DARK_ORANGE,
+                    lw=1.6,
+                    ls=(0, (4, 3)),
+                    zorder=9,
+                )
+            )
+
+    ax_overview.scatter([0], [0], s=28, color=DARK_PURPLE, zorder=9)
+    ax_overview.text(0.22, 0.20, "$O$", color=DARK_PURPLE, weight="bold")
+
+    radius_angle = 2.38
+    radius_end = R_INITIAL * np.array([np.cos(radius_angle), np.sin(radius_angle)])
+    ax_overview.add_patch(
+        FancyArrowPatch(
+            (0, 0),
+            tuple(radius_end),
+            arrowstyle="-|>",
+            mutation_scale=12,
+            color=DARK_GREEN,
+            lw=1.65,
+            zorder=4,
+        )
+    )
+    radius_label = 0.53 * radius_end
+    ax_overview.text(
+        radius_label[0] - 0.25,
+        radius_label[1] + 0.20,
+        "$R=8.80\\,\\mathrm{m}$",
+        color=DARK_GREEN,
+        rotation=np.degrees(radius_angle) - 180,
+        rotation_mode="anchor",
+        ha="center",
+        va="bottom",
+        weight="bold",
+    )
+    if selected_midpoint is not None:
+        ax_overview.annotate(
+            "局部放大",
+            xy=selected_midpoint,
+            xytext=(0.94, 0.84),
+            textcoords="axes fraction",
+            arrowprops=dict(arrowstyle="->", color=DARK_ORANGE, lw=1.25),
+            color=DARK_ORANGE,
+            ha="right",
+            va="center",
+            weight="bold",
+        )
+
+    overview_limit = 9.35
+    ax_overview.set_xlim(-overview_limit, overview_limit)
+    ax_overview.set_ylim(-overview_limit, overview_limit)
+    ax_overview.set_aspect("equal")
+    ax_overview.set_xticks([])
+    ax_overview.set_yticks([])
+    ax_overview.set_title("(a) $R=8.80$ m 圆域内的板凳实体比例", loc="left", pad=8)
+    for spine in ax_overview.spines.values():
+        spine.set_visible(False)
+
+    # ---------- (b) 选取一节龙身板凳，按同一几何关系局部放大 ----------
+    theta_a = theta_nodes[selected_index]
+    theta_b = theta_nodes[selected_index + 1]
+    p_a = node_points[selected_index]
+    p_b = node_points[selected_index + 1]
+    handle_distance = float(np.linalg.norm(p_b - p_a))
+
+    theta_context = np.linspace(theta_a - 0.10, theta_b + 0.10, 450)
+    context_global = np.column_stack(spiral_xy(theta_context))
+    context_local = _to_chord_coordinates(context_global, p_a, p_b)
+    theta_arc = np.linspace(theta_a, theta_b, 260)
+    arc_global = np.column_stack(spiral_xy(theta_arc))
+    arc_local = _to_chord_coordinates(arc_global, p_a, p_b)
+
+    body_left = -0.275
+    body_right = handle_distance + 0.275
+    body_polygon = np.array(
+        [
+            [body_left, -0.15],
+            [body_right, -0.15],
+            [body_right, 0.15],
+            [body_left, 0.15],
+        ]
+    )
+    ax_local.add_patch(
+        Polygon(
+            body_polygon,
+            closed=True,
+            facecolor=LIGHT_BLUE,
+            edgecolor=DARK_BLUE,
+            lw=1.6,
+            alpha=0.72,
+            zorder=1,
+        )
+    )
+    ax_local.plot(context_local[:, 0], context_local[:, 1], color=LIGHT_GREEN, lw=2.2, zorder=2)
+    ax_local.plot(
+        arc_local[:, 0],
+        arc_local[:, 1],
+        color=DARK_ORANGE,
+        lw=2.5,
+        ls=(0, (4, 3)),
+        zorder=5,
+    )
+    ax_local.plot([0, handle_distance], [0, 0], color=DARK_PURPLE, lw=3.0, zorder=6)
+    for x_value, label in ((0, "$P_i$"), (handle_distance, "$P_{i+1}$")):
+        ax_local.add_patch(
+            Circle(
+                (x_value, 0),
+                0.035,
+                facecolor=DARK_PURPLE,
+                edgecolor="white",
+                lw=0.6,
+                zorder=8,
+            )
+        )
+        ax_local.text(x_value, -0.205, label, color=DARK_PURPLE, ha="center", va="top", weight="bold")
+
+    _dimension_arrow(
+        ax_local,
+        0,
+        handle_distance,
+        0.31,
+        "$L_i=|P_iP_{i+1}|=1.65\\,\\mathrm{m}$（直线弦长）",
+        DARK_PURPLE,
+        label_above=True,
+    )
+    _dimension_arrow(
+        ax_local,
+        body_left,
+        body_right,
+        -0.34,
+        "龙身板凳实长 $2.20\\,\\mathrm{m}$",
+        DARK_BLUE,
+        label_above=False,
+    )
+
+    arc_mid = arc_local[len(arc_local) // 2]
+    ax_local.annotate(
+        "$s_i$：两把手间螺线弧",
+        xy=arc_mid,
+        xytext=(0.55 * handle_distance, 0.66),
+        arrowprops=dict(arrowstyle="->", color=DARK_ORANGE, lw=1.2),
+        color=DARK_ORANGE,
+        ha="center",
+        va="center",
+        weight="bold",
+    )
+    ax_local.text(
+        0.50,
+        0.12,
+        "$\\boxed{L_i\\neq s_i}$",
+        transform=ax_local.transAxes,
+        color=DARK_RED,
+        ha="center",
+        va="center",
+        fontsize=13,
+        weight="bold",
+    )
+    ax_local.text(
+        0.50,
+        0.03,
+        "龙头：$3.41-2\\times0.275=2.86\\,\\mathrm{m}$\n"
+        "龙身：$2.20-2\\times0.275=1.65\\,\\mathrm{m}$",
+        transform=ax_local.transAxes,
+        ha="center",
+        va="bottom",
+        bbox=dict(boxstyle="round,pad=0.35", facecolor=LIGHT_YELLOW, edgecolor="none", alpha=0.88),
+        color=INK,
+    )
+
+    ax_local.set_xlim(-0.48, handle_distance + 0.48)
+    ax_local.set_ylim(-0.66, 0.82)
+    ax_local.set_aspect("equal")
+    ax_local.set_xticks([])
+    ax_local.set_yticks([])
+    ax_local.set_title("(b) 局部放大：固定的是直线弦长，而非螺线弧长", loc="left", pad=8)
+    for spine in ax_local.spines.values():
+        spine.set_visible(False)
+
+    fig.subplots_adjust(left=0.02, right=0.99, top=0.92, bottom=0.05, wspace=0.08)
+    save_figure(fig, "fig1_bench_scale_and_chord_constraint")
 
 
 def representative_geometry() -> tuple[float, float, np.ndarray, np.ndarray]:

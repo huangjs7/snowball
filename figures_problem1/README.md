@@ -1,6 +1,6 @@
 # 问题一论文插图（图 1～3）
 
-- `fig1_archimedean_spiral_definition`：阿基米德螺线参数及龙头盘入方向示意图。
+- `fig1_bench_scale_and_chord_constraint`：真实尺度的板凳实体总览及直线弦长约束局部放大图。
 - `fig2_adjacent_handle_chord_constraint`：相邻把手在阿基米德螺线上的几何约束。
 - `fig3_adjacent_handle_velocity_transfer`：相邻把手速度传递的几何关系。
 
