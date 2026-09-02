@@ -663,121 +663,111 @@ def representative_geometry() -> tuple[float, float, np.ndarray, np.ndarray]:
 
 
 def figure_2_chord_constraint() -> None:
-    theta_i, theta_next, p_i, p_next = representative_geometry()
-    fig, ax = plt.subplots(figsize=(7.7, 6.6))
+    # 选取一节龙身板凳作为代表，严格求解 1.65 m 定长约束。
+    target_distance = 1.65
+    theta_i = 20.0
+    theta_next = solve_outer_theta(theta_i, chord_length=target_distance)
+    p_i = np.array(spiral_xy(theta_i), dtype=float)
+    p_next = np.array(spiral_xy(theta_next), dtype=float)
+    segment_length = float(np.linalg.norm(p_next - p_i))
+    if not np.isclose(segment_length, target_distance, atol=1e-10):
+        raise RuntimeError("相邻把手弦长校验失败")
 
-    theta = np.linspace(0.02, theta_next + 0.75, 2600)
+    theta = np.linspace(0, theta_next + 0.8, 1800)
     x, y = spiral_xy(theta)
-    ax.plot(x, y, color=LIGHT_GREEN, lw=1.55, zorder=1)
 
-    theta_segment = np.linspace(theta_i, theta_next, 350)
-    xs, ys = spiral_xy(theta_segment)
-    ax.plot(xs, ys, color=DARK_ORANGE, lw=2.0, ls=(0, (4, 3)), zorder=3)
+    fig, ax = plt.subplots(figsize=(8.2, 6.4), constrained_layout=True)
+    ax.plot(x, y, color=DARK_BLUE, lw=2.2, label="阿基米德螺线  $r=b\\theta$")
 
-    # 极径与固定弦长
-    ax.plot([0, p_i[0]], [0, p_i[1]], color=DARK_BLUE, lw=1.55, zorder=2)
-    ax.plot([0, p_next[0]], [0, p_next[1]], color=DARK_GREEN, lw=1.55, zorder=2)
-    ax.plot([p_i[0], p_next[0]], [p_i[1], p_next[1]], color=DARK_PURPLE, lw=3.0, zorder=5)
-
-    ax.scatter([0], [0], s=32, color=DARK_PURPLE, zorder=7)
-    ax.text(0.06, 0.04, "$O$", color=DARK_PURPLE, weight="bold")
-    ax.scatter([p_i[0]], [p_i[1]], s=70, color=DARK_BLUE, edgecolor="white", lw=0.8, zorder=8)
-    ax.scatter([p_next[0]], [p_next[1]], s=70, color=DARK_GREEN, edgecolor="white", lw=0.8, zorder=8)
-    ax.annotate(
-        "$P_i$",
-        xy=p_i,
-        xytext=(p_i[0] + 0.12, p_i[1] + 0.14),
-        arrowprops=dict(arrowstyle="->", color=DARK_BLUE, lw=1.0),
-        color=DARK_BLUE,
-        weight="bold",
+    # 极径与相邻把手的固定弦长。
+    ax.plot([0, p_i[0]], [0, p_i[1]], color="#777777", lw=1.2, zorder=1)
+    ax.plot([0, p_next[0]], [0, p_next[1]], color="#777777", lw=1.2, zorder=1)
+    ax.plot(
+        [p_i[0], p_next[0]],
+        [p_i[1], p_next[1]],
+        color=DARK_RED,
+        lw=3.5,
+        zorder=3,
     )
-    ax.annotate(
-        "$P_{i+1}$",
-        xy=p_next,
-        xytext=(p_next[0] - 0.42, p_next[1] - 0.19),
-        arrowprops=dict(arrowstyle="->", color=DARK_GREEN, lw=1.0),
-        color=DARK_GREEN,
-        weight="bold",
+    ax.scatter(
+        [p_i[0], p_next[0]],
+        [p_i[1], p_next[1]],
+        s=70,
+        color=DARK_RED,
+        zorder=4,
     )
+    ax.scatter(0, 0, s=28, color=INK, zorder=4)
 
-    mid_chord = 0.5 * (p_i + p_next)
-    chord_angle = np.degrees(np.arctan2(*(p_next - p_i)[::-1]))
+    # 两点标签沿极径向外偏移，置于螺线外侧。
+    label_gap = 0.18
+    p_i_label = p_i + label_gap * unit(p_i)
+    p_next_label = p_next + label_gap * unit(p_next)
+    ax.text(*p_i_label, "$P_i$", ha="center", va="center", fontsize=14, zorder=6)
+    ax.text(*p_next_label, "$P_{i+1}$", ha="center", va="center", fontsize=14, zorder=6)
+
+    # 相邻极角差。
+    arc_radius = 0.32
+    angle_i = np.degrees(theta_i % (2 * np.pi))
+    angle_next = angle_i + np.degrees(theta_next - theta_i)
+    ax.add_patch(
+        Arc(
+            (0, 0),
+            2 * arc_radius,
+            2 * arc_radius,
+            theta1=angle_i,
+            theta2=angle_next,
+            color="#555555",
+            lw=1.4,
+        )
+    )
+    theta_mid = 0.5 * (theta_i + theta_next)
     ax.text(
-        mid_chord[0] + 0.10,
-        mid_chord[1],
-        "$|P_iP_{i+1}|=d_i$",
-        color=DARK_PURPLE,
-        rotation=chord_angle,
-        rotation_mode="anchor",
-        ha="left",
-        va="bottom",
-        weight="bold",
-    )
-    ax.text(0.48 * p_i[0] - 0.03, 0.48 * p_i[1] + 0.06, "$r_i=b\\theta_i$", color=DARK_BLUE)
-    ax.text(
-        0.53 * p_next[0] + 0.03,
-        0.53 * p_next[1] - 0.04,
-        "$r_{i+1}=b\\theta_{i+1}$",
-        color=DARK_GREEN,
-        ha="right",
-    )
-
-    # 角度均按等效极角展示；三层圆弧避免符号混淆
-    angle_i = theta_i % (2 * np.pi)
-    angle_next = theta_next % (2 * np.pi)
-    if angle_next < angle_i:
-        angle_next += 2 * np.pi
-    add_polar_arc(ax, 0.32, 0, angle_i, DARK_BLUE, "$\\theta_i$", label_radius=0.39)
-    add_polar_arc(ax, 0.49, 0, angle_next, DARK_GREEN, "$\\theta_{i+1}$", label_radius=0.57)
-    add_polar_arc(
-        ax,
-        0.74,
-        angle_i,
-        angle_next,
-        DARK_ORANGE,
-        "",
-        label_radius=0.88,
-        lw=1.8,
-    )
-    ax.text(
-        -1.10,
-        0.16,
-        "$\\Delta\\theta_i=\\theta_{i+1}-\\theta_i$",
-        color=DARK_ORANGE,
+        0.44 * np.cos(theta_mid),
+        0.44 * np.sin(theta_mid),
+        "$\\Delta\\theta_i$",
+        fontsize=13,
         ha="center",
         va="center",
     )
 
-    ax.text(
-        0.97,
-        0.06,
-        "$d_0=2.86\\,\\mathrm{m}$\n$d_i=1.65\\,\\mathrm{m}\quad(i\\geq1)$",
-        transform=ax.transAxes,
-        ha="right",
-        va="bottom",
-        bbox=dict(boxstyle="round,pad=0.35", facecolor=LIGHT_YELLOW, edgecolor="none", alpha=0.88),
-        color=INK,
-    )
     ax.annotate(
-        "螺线弧（非杆长）",
-        xy=(xs[len(xs) // 2], ys[len(ys) // 2]),
-        xytext=(0.67, 0.88),
-        textcoords="axes fraction",
-        arrowprops=dict(arrowstyle="->", color=DARK_ORANGE, lw=1.0),
-        color=DARK_ORANGE,
-        ha="center",
+        "极点 O",
+        (0, 0),
+        xytext=(10, -4),
+        textcoords="offset points",
+        ha="left",
+        va="center",
+        fontsize=11,
     )
 
-    limit = 1.72
-    add_axis_arrows(ax, (-limit, limit), (-limit, limit))
-    ax.set_xlim(-limit, limit)
-    ax.set_ylim(-limit, limit)
-    ax.set_aspect("equal")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-    fig.subplots_adjust(left=0.02, right=0.98, top=0.98, bottom=0.02)
+    # 公式以弦中点为基准居中；相较上一版轻微上移。
+    midpoint = 0.5 * (p_i + p_next)
+    ax.annotate(
+        f"$d_i=|P_iP_{{i+1}}|={segment_length:.2f}\\,\\mathrm{{m}}$",
+        midpoint,
+        xytext=(0, -25),
+        textcoords="offset points",
+        ha="center",
+        color="#B5241C",
+        fontsize=13,
+    )
+
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_xlabel("$x\\ (\\mathrm{m})$")
+    ax.set_ylabel("$y\\ (\\mathrm{m})$")
+    ax.set_title("图2  相邻把手几何约束示意图", fontsize=16, pad=30)
+    ax.text(
+        0.5,
+        1.012,
+        "$d_0=2.86\\,\\mathrm{m}$（龙头）；"
+        "$d_i=1.65\\,\\mathrm{m}$（龙身、龙尾，$i=1,\\ldots,222$）",
+        transform=ax.transAxes,
+        ha="center",
+        va="bottom",
+        fontsize=10.5,
+    )
+    ax.grid(True, color=GRID, ls="--", lw=0.6, alpha=0.65)
+    ax.legend(loc="lower right", frameon=False)
     save_figure(fig, "图02_相邻把手几何约束示意图")
 
 

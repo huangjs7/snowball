@@ -27,17 +27,15 @@ OUTPUT_STEM = "图04_典型时刻整龙位置分布"
 
 
 def locate_result_file(explicit_path: Path | None) -> Path:
-    """优先使用命令行路径，其次寻找桌面上的填充结果文件。"""
+    """优先使用命令行路径，其次查找仓库内的填充结果文件。"""
 
     candidates = []
     if explicit_path is not None:
         candidates.append(explicit_path)
     candidates.extend(
         [
-            HERE / "result1.xlsx",
             PROJECT_ROOT / "提交" / "result1.xlsx",
             PROJECT_ROOT / "建模计算" / "问题1" / "输出" / "result1.xlsx",
-            Path.home() / "Desktop" / "result1.xlsx",
         ]
     )
     for path in candidates:
@@ -97,7 +95,8 @@ def validate_chord_constraints(snapshots: dict[int, np.ndarray]) -> float:
 
 
 def draw_figure(snapshots: dict[int, np.ndarray]) -> None:
-    fig, axes = plt.subplots(2, 3, figsize=(11.6, 7.7), sharex=True, sharey=True)
+    # 按 A4 正文约 16 cm 宽设计，避免论文缩放后字号过小。
+    fig, axes = plt.subplots(2, 3, figsize=(8.0, 5.3), sharex=True, sharey=True)
     panel_tags = "abcdef"
     time_box_colors = [
         plotting.LIGHT_BLUE,
