@@ -1,0 +1,21 @@
+/ponytail /mspm0kit-tianmengxing /grill-me /karpathy-guidelines
+
+/find-skills
+
+/webup-statusline
+
+这个会话要结束了。请写一份交接文档存到 ：
+我们在做什么任务、已经完成了什么、当前卡在哪、下一步计划是什么、有哪些踩过的坑绝对不要再踩。写给一个完全没有上下文的新会话看。
+
+
+线条颜色：d73221（红）、f79015（橙）、4573b4（蓝）、457635（绿）、4E3282（紫）
+
+
+ Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the design tree, resolving  dependencies between decisions one-by-one. For each question, provide your recommended answer. 
+Ask the questions one at a time. If a question can be answered by exploring the codebase, explore the codebase instead.
+
+
+
+
+
+

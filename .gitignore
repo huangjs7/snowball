@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mplconfig/
+.mplconfig.zip
+
+# Jupyter
+.ipynb_checkpoints/
+
+# LaTeX build artifacts (keep .tex and the final PDF)
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.fls
+*.fdb_latexmk
+
+# Office temporary files
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
