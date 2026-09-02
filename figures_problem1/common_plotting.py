@@ -39,7 +39,7 @@ LIGHT_PINK = "#f2a8da"
 INK = "#262626"
 GRID = "#d8d8d8"
 
-OUTPUT_DIR = Path(__file__).resolve().parent / "figures_problem1"
+OUTPUT_DIR = Path(__file__).resolve().parent
 
 
 def configure_style() -> None:
@@ -171,7 +171,7 @@ def solve_outer_theta(theta_i: float, chord_length: float) -> float:
     return 0.5 * (lo + hi)
 
 
-def _figure_1_parameter_definition_legacy() -> None:
+def figure_1_parameter_definition() -> None:
     fig, (ax_overview, ax_local) = plt.subplots(
         1, 2, figsize=(12.6, 5.6), gridspec_kw={"width_ratios": [1.12, 0.88]}
     )
@@ -188,7 +188,7 @@ def _figure_1_parameter_definition_legacy() -> None:
     ax_overview.text(0.22, 0.22, "$O$", color=DARK_PURPLE, weight="bold")
     ax_overview.scatter([R_INITIAL], [0], s=58, color=DARK_RED, edgecolor="white", lw=0.7, zorder=8)
     ax_overview.annotate(
-        "$A=P_0(0)=(8.8,0)$\n$\\theta_0(0)=32\\pi$",
+        "$A=P_0(0)$\n$\\theta_0(0)=32\\pi,\\quad r_0(0)=8.8\\,\\mathrm{m}$",
         xy=(R_INITIAL, 0),
         xytext=(4.5, 2.0),
         arrowprops=dict(arrowstyle="->", color=DARK_RED, lw=1.1),
@@ -201,11 +201,20 @@ def _figure_1_parameter_definition_legacy() -> None:
     ax_overview.text(
         5.0,
         -6.5,
-        "顺时针盘入\n($\\theta$ 减小)",
+        "龙头顺时针盘入",
         color=DARK_ORANGE,
         weight="bold",
         ha="center",
         va="center",
+    )
+    ax_overview.text(
+        5.0,
+        -7.45,
+        "盘入方向：$\\theta\\downarrow$",
+        color=DARK_RED,
+        ha="center",
+        va="center",
+        bbox=dict(boxstyle="round,pad=0.25", facecolor=LIGHT_RED, edgecolor="none", alpha=0.50),
     )
 
     overview_limit = 9.55
@@ -215,7 +224,7 @@ def _figure_1_parameter_definition_legacy() -> None:
     ax_overview.set_aspect("equal")
     ax_overview.set_xticks([])
     ax_overview.set_yticks([])
-    ax_overview.set_title("(a) 16 圈螺线与龙头初始位置", loc="left", pad=8)
+    ax_overview.set_title("(a) 完整螺线、初始点与盘入方向", loc="left", pad=8)
     for spine in ax_overview.spines.values():
         spine.set_visible(False)
 
@@ -244,15 +253,37 @@ def _figure_1_parameter_definition_legacy() -> None:
     )
     ax_local.text(0.53 * px - 0.03, 0.53 * py + 0.025, "$r=b\\theta$", color=DARK_PURPLE, rotation=-43)
     add_polar_arc(ax_local, 0.075, 0, theta_p, DARK_ORANGE, "$\\theta$", label_radius=0.098)
+    arc_start = theta_p - 0.18
+    ax_local.add_patch(
+        FancyArrowPatch(
+            (0.075 * np.cos(arc_start), 0.075 * np.sin(arc_start)),
+            (0.075 * np.cos(theta_p), 0.075 * np.sin(theta_p)),
+            arrowstyle="-|>",
+            mutation_scale=10,
+            color=DARK_ORANGE,
+            lw=1.3,
+            connectionstyle="arc3,rad=0.08",
+            zorder=6,
+        )
+    )
     ax_local.text(
         0.02,
         0.95,
-        "$r=b\\theta,\\quad b=\\dfrac{0.55}{2\\pi}$\n"
-        "$x=b\\theta\\cos\\theta,\\quad y=b\\theta\\sin\\theta$",
+        "$r=b\\theta,\\qquad b=\\dfrac{0.55}{2\\pi}$",
         transform=ax_local.transAxes,
         ha="left",
         va="top",
         bbox=dict(boxstyle="round,pad=0.35", facecolor=LIGHT_PINK, edgecolor="none", alpha=0.72),
+        color=INK,
+    )
+    ax_local.text(
+        0.50,
+        0.08,
+        "$\\theta$：从正 $x$ 轴逆时针量到 $OP$ 的极角",
+        transform=ax_local.transAxes,
+        ha="center",
+        va="center",
+        bbox=dict(boxstyle="round,pad=0.30", facecolor=LIGHT_YELLOW, edgecolor="none", alpha=0.82),
         color=INK,
     )
     local_limit = 0.34
@@ -262,12 +293,12 @@ def _figure_1_parameter_definition_legacy() -> None:
     ax_local.set_aspect("equal")
     ax_local.set_xticks([])
     ax_local.set_yticks([])
-    ax_local.set_title("(b) 极坐标参数的局部定义", loc="left", pad=8)
+    ax_local.set_title("(b) 极角与极径的符号定义", loc="left", pad=8)
     for spine in ax_local.spines.values():
         spine.set_visible(False)
 
     fig.subplots_adjust(left=0.025, right=0.985, top=0.92, bottom=0.04, wspace=0.12)
-    save_figure(fig, "fig1_archimedean_spiral_definition")
+    save_figure(fig, "fig1_archimedean_spiral_parameters")
 
 
 def _bench_corners(p_start: np.ndarray, p_end: np.ndarray, total_length: float) -> np.ndarray:
@@ -329,7 +360,7 @@ def _dimension_arrow(
     )
 
 
-def figure_1_parameter_definition() -> None:
+def _figure_1_bench_scale_legacy() -> None:
     """真实尺度总览与直线弦长约束的局部放大图。"""
 
     fig, (ax_overview, ax_local) = plt.subplots(

@@ -4,7 +4,7 @@
 
 | 图号 | 目录 | 独立入口 |
 |---|---|---|
-| 图 1 | `fig01_bench_scale_chord` | `fig01_bench_scale_chord/plot.py` |
+| 图 1 | `fig01_spiral_parameters` | `fig01_spiral_parameters/plot.py` |
 | 图 2 | `fig02_handle_geometry` | `fig02_handle_geometry/plot.py` |
 | 图 3 | `fig03_velocity_transfer` | `fig03_velocity_transfer/plot.py` |
 
